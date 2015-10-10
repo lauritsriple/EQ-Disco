@@ -10,10 +10,10 @@
 #define STRIP_H_
 
 #include <avr/io.h>
+#include "io.h"
+
 //Public functions
-void strip_setR(uint8_t val);
-void strip_setG(uint8_t val);
-void strip_setB(uint8_t val);
+void strip_setChannel(Color col,uint8_t val);
 void strip_setRGB(uint8_t r, uint8_t g, uint8_t b);
 void strip_setHSV(int hVal,int sVal, int vVal);
 void strip_setNewHSVColor();//returns new HSV color from colors 2x array

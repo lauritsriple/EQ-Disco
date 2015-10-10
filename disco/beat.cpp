@@ -21,7 +21,7 @@
 //eq: if used with 3 different lights, just like an equalizer with 3 channels.
 //fade: fades through colors
 
-uint8_t isBeat(){
+uint8_t isBeat(void){
 	uint16_t values[N_FILTER];
 	static uint8_t beat=0; //1 if beat, 0 if not beat
 	static uint8_t index=0;
@@ -31,7 +31,7 @@ uint8_t isBeat(){
 	static uint16_t offset=20;
 	
 	//RESET, high -> low
-	msgeq7_reset();	
+	msgeq7_reset();
 	_delay_ms(10);
 	//READ FROM CHIP UP TO "FILTERS"
 	for (int i = 0 ; i<N_FILTER;i++){

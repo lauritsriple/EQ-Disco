@@ -18,31 +18,39 @@
 static volatile uint8_t mode=1;
 static uint8_t musicMode=1;
 
-ISR (INT0_vect){
-	//Debouncing (check if button was actually pressed)
-	if (!(PINB & (1 << BUTTON))){
-		if (mode>=3){
-			mode=1;
-		}
-		else {
-			mode++;
-		}
-		led_blink(mode);
-	}
-	
-}
-
 int main() {
 	pwm_init();
 	adc_init();
 	msgeq7_init();
 	led_init();
-	buttons_init();
+	button_init();
+	sw_init();
+	
 	static uint8_t repeat=0;
 	static uint8_t count=0;
 	static uint16_t noBeatCount=0;
-	sei();
-    while(1){
+	
+	while(1){
+		//led_blink(LED1,1);
+		//led_blink(LED2,1);
+		_delay_ms(100);
+		
+		
+		
+		if (!(sw_status)){
+			led_blink(LED1,1);
+		}
+		/*
+		
+		if (button_pressed()){
+			led_blink(LED1,1);
+			if (mode>=3){
+				mode=1;
+			}
+			else {
+				mode++;
+			}
+		}
 		switch (mode){
 			case 1: //const
 				uint8_t hsv[3];
@@ -102,6 +110,6 @@ int main() {
 				break;
 			default:
 				break;
-		}
-    }
+		}*/
+	}
 }

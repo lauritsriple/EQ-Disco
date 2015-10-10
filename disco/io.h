@@ -11,33 +11,37 @@
 
 #include <avr/io.h> //needed for uint8_t
 
+enum Color {r,g,b};
+
 //PORT A
 #define MSGEQ7	0	//PA0
-#define POT1	1	//PA1
-#define POT2	2	//PA2
-#define POT3	3	//PA3
-#define LED1	4	//PA4
-#define PWM1	5	//PA5
-#define PWM2	6	//PA6
-#define PWM3	7	//PA7
+#define RESET	1	//PA1
+#define STROBE	2	//PA2
+#define BUTTON	3	//PA3
+#define SW		4	//PA4
+#define POT		5	//PA5
+#define BLUE	6	//PA6
+#define GREEN	7	//PA7
 
-//PORT B
-#define RESET	0	//PB0
-#define STROBE	1	//PB1
-#define BUTTON	2	//PB2
-//#define LED2	3	//PB3 Not in use
+#define LED2	0	//PB0
+#define LED1	1	//PB1
+#define RED		2	//PB2
+//PB3 not in use (is reset!)
 
 void pwm_init(void);
-void pwm_setR(uint8_t val);
-void pwm_setG(uint8_t val);
-void pwm_setB(uint8_t val);
+void pwm_set(Color col,uint8_t val);
 void adc_init(void);
 void adc_setChannel(uint8_t channel);
 uint16_t adc_read();
-void buttons_init(void);
+
+void button_init(void);
+uint8_t button_pressed(void);
+
+void sw_init(void);
+uint8_t sw_status(void);
 void led_init(void);
-void led_set(int val);
-void led_blink(uint8_t num);
+void led_set(uint8_t led,int val);
+void led_blink(uint8_t led,uint8_t num);
 void msgeq7_init(void);
 void msgeq7_reset(void);
 void msgeq7_strobe(void);

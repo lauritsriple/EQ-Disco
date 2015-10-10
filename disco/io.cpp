@@ -12,7 +12,13 @@
 #include "io.h"
 
 void pwm_init(void){
-	DDRA |= ( 1 << PWM1) | (1 << PWM2) | (1 << PWM3);
+	//OC0A -> PB2 -> RED
+	//OC0B -> PA7 -> GREEN
+	//OC1A -> PA6 -> BLUE
+
+	DDRB |= (1 << RED);
+	DDRA |= (1 << GREEN) | (1 << BLUE);
+	
 	//****** COUNTER0 8-bit	
 	// Counter 0B clear OC0B at bottom (counting up)
 	TCCR0A |= ( 1 << COM0B1);
@@ -33,16 +39,12 @@ void pwm_init(void){
 	TCCR1B |= ( 1 << CS10 );
 }
 
-void pwm_setR(uint8_t val){
-	OCR1BL = val;
-}
-
-void pwm_setG(uint8_t val){
-	OCR1AL = val;
-}
-
-void pwm_setB(uint8_t val){
-	OCR0B = val;
+void pwm_set(Color col,uint8_t val){
+	switch(col){
+		case r: OCR0A=val;
+		case g: OCR0B=val;
+		case b: OCR1AL=val;
+	}
 }
 
 void adc_init(void){
@@ -87,42 +89,62 @@ uint16_t adc_read(){
 	return adc_value;
 }
 
-void buttons_init(void){
-	DDRB&=~(1 << BUTTON);
-	PORTB|=(1 << BUTTON);
-	//setup interupts on INT0
-	MCUCR|=(1 << ISC01);
-	MCUCR&=~(1<< ISC00); //Interupt on rising edge
-	GIMSK |= (1 << INT0);
-	//interuptrutine in disco.cpp int0_vect	
+void button_init(void){
+	DDRA&=~(1 << BUTTON);
+	//PORTA|=(1 << BUTTON);
+}
+
+void sw_init(void){
+	DDRA&=~(1 << SW);
+	PORTA |= (1<<SW);
+}
+
+uint8_t sw_status(void){
+	uint8_t val = (PINA & (1<<SW));
+	return val;
+}
+
+uint8_t button_pressed(void){
+	static uint8_t pushed=0;
+	
+	if (!(PINB & (1 << BUTTON)) & (!pushed)) { //PIN is low and not already pushed
+		pushed =1;
+		return 1;
+	}
+	
+	if ((PINB & ( 1 << BUTTON)) & pushed){ //is pushed and goes high
+		pushed=0;
+	}
+	
+	return 0;
 }
 
 void led_init(void){
-	DDRA |= (1 << LED1); //Output
-	PORTA &=~(1 <<LED1); //Off by default
+	DDRB |= (1 << LED1)|(1 << LED2); //Output
+	PORTB &=~(1 <<LED1) | ( 1 << LED2); //Off by default
 }
 
-void led_set(int val){
+void led_set(uint8_t led, uint8_t val){ //led should be LED1 og LED2
 	if (val==0){
-		PORTA &=~(1 << LED1);
+		PORTB &=~(1 << led);
 	}
 	else {
-		PORTA |= (1 << LED1);
+		PORTB |= (1 << led);
 	}
 }
 
-void led_blink(uint8_t num){
+void led_blink(uint8_t led,uint8_t num){
 	if ((num==0)|(num==1)){
-		PORTA|=(1 << LED1);
+		PORTB|=(1 << led);
 		_delay_ms(40);
-		PORTA&=~(1 << LED1);
+		PORTB&=~(1 << led);
 		_delay_ms(10);
 	}
 	else {
 		for (int i=0;i<num;i++){
-			PORTA|=(1 << LED1);
+			PORTB|=(1 << led);
 			_delay_ms(40);
-			PORTA&=~(1 << LED1);
+			PORTB&=~(1 << led);
 			_delay_ms(250);
 		}
 	}
@@ -130,24 +152,24 @@ void led_blink(uint8_t num){
 
 void msgeq7_init(void){
 		//Strobe and reset as outputs
-		DDRB |= (1 << RESET) | (1 << STROBE);
+		DDRA |= (1 << RESET) | (1 << STROBE);
 		//Reset chip
-		PORTB |= (1 << RESET);
-		PORTB &= ~(1 << RESET);
+		PORTA |= (1 << RESET);
+		PORTA &= ~(1 << RESET);
 }
 
 void msgeq7_reset(void){
 	//RESET, high -> low
-	PORTB |= (1 << RESET);
+	PORTA |= (1 << RESET);
 	_delay_us(100);
-	PORTB &= ~(1 << RESET);
+	PORTA &= ~(1 << RESET);
 	_delay_us(200);	
 }
 
 void msgeq7_strobe(void){
-	PORTB |= (1 << STROBE); //high
+	PORTA |= (1 << STROBE); //high
 	_delay_us(2);
-	PORTB &= ~(1 << STROBE); //low
+	PORTA &= ~(1 << STROBE); //low
 	_delay_us(40); //specs say 36 microseconds
 }
 

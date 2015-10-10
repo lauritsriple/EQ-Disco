@@ -13,7 +13,7 @@
 
 //uses the lowest bandpass-filters on MSGEQ7 up to "filter" and analyses them for beat.
 //this function should be run very often (whith timer maybe?)
-uint8_t isBeat();
+uint8_t isBeat(void);
 
 //uses all the filters on MSGEQ7 and tries to make sense of them.
 //should let through up to 7 filters. if less filters is choosen, it will

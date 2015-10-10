@@ -3,30 +3,40 @@ disco.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         000000a4  00000000  00000000  00000054  2**1
+  0 .text         000001cc  00000000  00000000  00000094  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .comment      00000030  00000000  00000000  000000f8  2**0
+  1 .data         00000006  00800060  000001cc  00000260  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000001  00800066  00800066  00000266  2**0
+                  ALLOC
+  3 .comment      00000030  00000000  00000000  00000266  2**0
                   CONTENTS, READONLY
-  2 .debug_aranges 00000098  00000000  00000000  00000128  2**0
+  4 .debug_aranges 00000128  00000000  00000000  00000296  2**0
                   CONTENTS, READONLY, DEBUGGING
-  3 .debug_info   000004fe  00000000  00000000  000001c0  2**0
+  5 .debug_info   00000f5b  00000000  00000000  000003be  2**0
                   CONTENTS, READONLY, DEBUGGING
-  4 .debug_abbrev 00000263  00000000  00000000  000006be  2**0
+  6 .debug_abbrev 0000065a  00000000  00000000  00001319  2**0
                   CONTENTS, READONLY, DEBUGGING
-  5 .debug_line   0000035e  00000000  00000000  00000921  2**0
+  7 .debug_line   00000686  00000000  00000000  00001973  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_frame  000000f8  00000000  00000000  00000c80  2**2
+  8 .debug_frame  00000270  00000000  00000000  00001ffc  2**2
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_str    000002e7  00000000  00000000  00000d78  2**0
+  9 .debug_str    00000568  00000000  00000000  0000226c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_loc    0000003c  00000000  00000000  0000105f  2**0
+ 10 .debug_loc    000008ea  00000000  00000000  000027d4  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_ranges 00000078  00000000  00000000  0000109b  2**0
+ 11 .debug_ranges 00000100  00000000  00000000  000030be  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
 
 00000000 <__vectors>:
+//strobe: turns on lights on beat (blinking)
+//change: change color on beat
+//eq: if used with 3 different lights, just like an equalizer with 3 channels.
+//fade: fades through colors
+
+uint8_t isBeat(void){
    0:	10 c0       	rjmp	.+32     	; 0x22 <__ctors_end>
    2:	2a c0       	rjmp	.+84     	; 0x58 <__bad_interrupt>
    4:	29 c0       	rjmp	.+82     	; 0x58 <__bad_interrupt>
@@ -38,7 +48,19 @@ Disassembly of section .text:
   10:	23 c0       	rjmp	.+70     	; 0x58 <__bad_interrupt>
   12:	22 c0       	rjmp	.+68     	; 0x58 <__bad_interrupt>
   14:	21 c0       	rjmp	.+66     	; 0x58 <__bad_interrupt>
+	static uint16_t beatVal=50;
+	static uint16_t noBeatCount=0;
+	static uint16_t offset=20;
+	
+	//RESET, high -> low
+	msgeq7_reset();
   16:	20 c0       	rjmp	.+64     	; 0x58 <__bad_interrupt>
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
   18:	1f c0       	rjmp	.+62     	; 0x58 <__bad_interrupt>
   1a:	1e c0       	rjmp	.+60     	; 0x58 <__bad_interrupt>
   1c:	1d c0       	rjmp	.+58     	; 0x58 <__bad_interrupt>
@@ -56,113 +78,337 @@ Disassembly of section .text:
 0000002e <__do_copy_data>:
   2e:	10 e0       	ldi	r17, 0x00	; 0
   30:	a0 e6       	ldi	r26, 0x60	; 96
+	_delay_ms(10);
+	//READ FROM CHIP UP TO "FILTERS"
+	for (int i = 0 ; i<N_FILTER;i++){
+		values[i]=msgeq7_getVal();
   32:	b0 e0       	ldi	r27, 0x00	; 0
-  34:	e4 ea       	ldi	r30, 0xA4	; 164
-  36:	f0 e0       	ldi	r31, 0x00	; 0
+  34:	ec ec       	ldi	r30, 0xCC	; 204
+  36:	f1 e0       	ldi	r31, 0x01	; 1
   38:	02 c0       	rjmp	.+4      	; 0x3e <__SP_H__>
   3a:	05 90       	lpm	r0, Z+
+		msgeq7_strobe();
   3c:	0d 92       	st	X+, r0
-  3e:	a0 36       	cpi	r26, 0x60	; 96
+	
+	//RESET, high -> low
+	msgeq7_reset();
+	_delay_ms(10);
+	//READ FROM CHIP UP TO "FILTERS"
+	for (int i = 0 ; i<N_FILTER;i++){
+  3e:	a6 36       	cpi	r26, 0x66	; 102
   40:	b1 07       	cpc	r27, r17
   42:	d9 f7       	brne	.-10     	; 0x3a <__do_copy_data+0xc>
 
 00000044 <__do_clear_bss>:
+		values[i]=msgeq7_getVal();
+		msgeq7_strobe();
+	}	
+	
+	//find beat, iterate through output list
+	if (beat==0){
   44:	20 e0       	ldi	r18, 0x00	; 0
-  46:	a0 e6       	ldi	r26, 0x60	; 96
+  46:	a6 e6       	ldi	r26, 0x66	; 102
   48:	b0 e0       	ldi	r27, 0x00	; 0
   4a:	01 c0       	rjmp	.+2      	; 0x4e <.do_clear_bss_start>
 
 0000004c <.do_clear_bss_loop>:
+		for (uint8_t i=0; i<N_FILTER;i++){
+			if (values[i]>beatVal-offset){ // high value and not already beat
   4c:	1d 92       	st	X+, r1
 
 0000004e <.do_clear_bss_start>:
-  4e:	a0 36       	cpi	r26, 0x60	; 96
+  4e:	a7 36       	cpi	r26, 0x67	; 103
   50:	b2 07       	cpc	r27, r18
   52:	e1 f7       	brne	.-8      	; 0x4c <.do_clear_bss_loop>
   54:	02 d0       	rcall	.+4      	; 0x5a <main>
-  56:	24 c0       	rjmp	.+72     	; 0xa0 <_exit>
+  56:	b8 c0       	rjmp	.+368    	; 0x1c8 <_exit>
 
 00000058 <__bad_interrupt>:
   58:	d3 cf       	rjmp	.-90     	; 0x0 <__vectors>
 
 0000005a <main>:
+  5a:	1b d0       	rcall	.+54     	; 0x92 <_Z8pwm_initv>
+  5c:	37 d0       	rcall	.+110    	; 0xcc <_Z8adc_initv>
+  5e:	ae d0       	rcall	.+348    	; 0x1bc <_Z11msgeq7_initv>
+  60:	56 d0       	rcall	.+172    	; 0x10e <_Z8led_initv>
+  62:	3b d0       	rcall	.+118    	; 0xda <_Z11button_initv>
+  64:	61 e0       	ldi	r22, 0x01	; 1
+  66:	81 e0       	ldi	r24, 0x01	; 1
+  68:	57 d0       	rcall	.+174    	; 0x118 <_Z9led_blinkhh>
+  6a:	61 e0       	ldi	r22, 0x01	; 1
+  6c:	80 e0       	ldi	r24, 0x00	; 0
+  6e:	54 d0       	rcall	.+168    	; 0x118 <_Z9led_blinkhh>
+  70:	c1 e0       	ldi	r28, 0x01	; 1
+  72:	36 d0       	rcall	.+108    	; 0xe0 <_Z14button_pressedv>
+  74:	88 23       	and	r24, r24
+  76:	e9 f3       	breq	.-6      	; 0x72 <main+0x18>
+		msgeq7_strobe();
+	}	
+	
+	//find beat, iterate through output list
+	if (beat==0){
+		for (uint8_t i=0; i<N_FILTER;i++){
+  78:	80 91 64 00 	lds	r24, 0x0064
+  7c:	83 30       	cpi	r24, 0x03	; 3
+  7e:	18 f0       	brcs	.+6      	; 0x86 <main+0x2c>
+			if (values[i]>beatVal-offset){ // high value and not already beat
+  80:	c0 93 64 00 	sts	0x0064, r28
+				beatVal=values[i];
+  84:	f6 cf       	rjmp	.-20     	; 0x72 <main+0x18>
+  86:	80 91 64 00 	lds	r24, 0x0064
+				noBeatCount=0;
+  8a:	8f 5f       	subi	r24, 0xFF	; 255
+  8c:	80 93 64 00 	sts	0x0064, r24
+  90:	f0 cf       	rjmp	.-32     	; 0x72 <main+0x18>
 
-int main(void) {
-	//pwm_init();
-	//adc_init();
-	//msgeq7_init();
-	led_init();
-  5a:	19 d0       	rcall	.+50     	; 0x8e <_Z8led_initv>
-	//strip_setR(250);
-	//pwm_setG(250);
-	//pwm_setR(0);
-	//pwm_setB(0);
-    while(1){
-		led_set(0);
-  5c:	80 e0       	ldi	r24, 0x00	; 0
-  5e:	90 e0       	ldi	r25, 0x00	; 0
-  60:	19 d0       	rcall	.+50     	; 0x94 <_Z7led_seti>
-	#else
-		//round up by default
-		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
-	#endif
-
-	__builtin_avr_delay_cycles(__ticks_dc);
-  62:	2f ef       	ldi	r18, 0xFF	; 255
-  64:	89 e6       	ldi	r24, 0x69	; 105
-  66:	98 e1       	ldi	r25, 0x18	; 24
-  68:	21 50       	subi	r18, 0x01	; 1
-  6a:	80 40       	sbci	r24, 0x00	; 0
-  6c:	90 40       	sbci	r25, 0x00	; 0
-  6e:	e1 f7       	brne	.-8      	; 0x68 <main+0xe>
-  70:	00 c0       	rjmp	.+0      	; 0x72 <main+0x18>
-  72:	00 00       	nop
-		_delay_ms(1000);
-		led_set(1);
-  74:	81 e0       	ldi	r24, 0x01	; 1
-  76:	90 e0       	ldi	r25, 0x00	; 0
-  78:	0d d0       	rcall	.+26     	; 0x94 <_Z7led_seti>
-  7a:	2f ef       	ldi	r18, 0xFF	; 255
-  7c:	89 e6       	ldi	r24, 0x69	; 105
-  7e:	98 e1       	ldi	r25, 0x18	; 24
-  80:	21 50       	subi	r18, 0x01	; 1
-  82:	80 40       	sbci	r24, 0x00	; 0
-  84:	90 40       	sbci	r25, 0x00	; 0
-  86:	e1 f7       	brne	.-8      	; 0x80 <main+0x26>
-  88:	00 c0       	rjmp	.+0      	; 0x8a <main+0x30>
-  8a:	00 00       	nop
-  8c:	e7 cf       	rjmp	.-50     	; 0x5c <main+0x2>
-
-0000008e <_Z8led_initv>:
-}
-
-void led_init(void){
-	//LEDS as outputs
-	//When using port PB3/LED2, make sure fuses enabled RSTDISBL (Disables reset functionality)
-	DDRB |= (1 << LED1);
-  8e:	ba 9a       	sbi	0x17, 2	; 23
-	PORTB &=~(1 <<LED1);
-  90:	c2 98       	cbi	0x18, 2	; 24
-  92:	08 95       	ret
-
-00000094 <_Z7led_seti>:
-}
-
-void led_set(int val){
-	if (val==0){
-  94:	89 2b       	or	r24, r25
-  96:	11 f4       	brne	.+4      	; 0x9c <_Z7led_seti+0x8>
-		PORTB &=~(1 << LED1);
-  98:	c2 98       	cbi	0x18, 2	; 24
-  9a:	08 95       	ret
+00000092 <_Z8pwm_initv>:
+				beat=1;
+  92:	ba 9a       	sbi	0x17, 2	; 23
+  94:	8a b3       	in	r24, 0x1a	; 26
+  96:	80 6c       	ori	r24, 0xC0	; 192
+				index=i;
+  98:	8a bb       	out	0x1a, r24	; 26
+  9a:	80 b7       	in	r24, 0x30	; 48
+				indexBeat=i;
+  9c:	80 62       	ori	r24, 0x20	; 32
+  9e:	80 bf       	out	0x30, r24	; 48
+  a0:	80 b7       	in	r24, 0x30	; 48
+  a2:	83 60       	ori	r24, 0x03	; 3
+  a4:	80 bf       	out	0x30, r24	; 48
+  a6:	83 b7       	in	r24, 0x33	; 51
+				return 1;
+  a8:	82 60       	ori	r24, 0x02	; 2
+  aa:	83 bf       	out	0x33, r24	; 51
+			}
+		}
+		if(beatVal>(150)){
+  ac:	8f b5       	in	r24, 0x2f	; 47
+  ae:	80 6a       	ori	r24, 0xA0	; 160
+  b0:	8f bd       	out	0x2f, r24	; 47
+  b2:	8f b5       	in	r24, 0x2f	; 47
+			beatVal--;
+  b4:	8f 7b       	andi	r24, 0xBF	; 191
+  b6:	8f bd       	out	0x2f, r24	; 47
+  b8:	8f b5       	in	r24, 0x2f	; 47
+  ba:	81 60       	ori	r24, 0x01	; 1
+  bc:	8f bd       	out	0x2f, r24	; 47
+  be:	8e b5       	in	r24, 0x2e	; 46
+					indexBeat=N_FILTER;
+				}
+			}
+		}
 	}
-	else {
-		PORTB |= (1 << LED1);
-  9c:	c2 9a       	sbi	0x18, 2	; 24
-  9e:	08 95       	ret
+	return 0;
+  c0:	88 60       	ori	r24, 0x08	; 8
+  c2:	8e bd       	out	0x2e, r24	; 46
+		if(beatVal>(150)){
+			beatVal--;
+		}
+	}
+	else {//beat==1
+		if (values[index]*5<beatVal){
+  c4:	8e b5       	in	r24, 0x2e	; 46
+  c6:	81 60       	ori	r24, 0x01	; 1
+  c8:	8e bd       	out	0x2e, r24	; 46
+  ca:	08 95       	ret
 
-000000a0 <_exit>:
-  a0:	f8 94       	cli
+000000cc <_Z8adc_initv>:
+  cc:	3e 98       	cbi	0x07, 6	; 7
+  ce:	3f 98       	cbi	0x07, 7	; 7
+  d0:	86 b1       	in	r24, 0x06	; 6
+  d2:	86 60       	ori	r24, 0x06	; 6
+  d4:	86 b9       	out	0x06, r24	; 6
+  d6:	37 9a       	sbi	0x06, 7	; 6
+  d8:	08 95       	ret
 
-000000a2 <__stop_program>:
-  a2:	ff cf       	rjmp	.-2      	; 0xa2 <__stop_program>
+000000da <_Z11button_initv>:
+  da:	d3 98       	cbi	0x1a, 3	; 26
+  dc:	db 9a       	sbi	0x1b, 3	; 27
+  de:	08 95       	ret
+
+000000e0 <_Z14button_pressedv>:
+  e0:	80 91 66 00 	lds	r24, 0x0066
+  e4:	b3 99       	sbic	0x16, 3	; 22
+  e6:	09 c0       	rjmp	.+18     	; 0xfa <_Z14button_pressedv+0x1a>
+  e8:	91 e0       	ldi	r25, 0x01	; 1
+  ea:	81 11       	cpse	r24, r1
+  ec:	90 e0       	ldi	r25, 0x00	; 0
+  ee:	99 23       	and	r25, r25
+  f0:	21 f0       	breq	.+8      	; 0xfa <_Z14button_pressedv+0x1a>
+			beat=0;
+  f2:	81 e0       	ldi	r24, 0x01	; 1
+  f4:	80 93 66 00 	sts	0x0066, r24
+			return 0;
+  f8:	08 95       	ret
+		}
+		else {
+			noBeatCount++;
+  fa:	96 b3       	in	r25, 0x16	; 22
+  fc:	89 23       	and	r24, r25
+  fe:	83 ff       	sbrs	r24, 3
+ 100:	04 c0       	rjmp	.+8      	; 0x10a <_Z14button_pressedv+0x2a>
+ 102:	10 92 66 00 	sts	0x0066, r1
+ 106:	80 e0       	ldi	r24, 0x00	; 0
+ 108:	08 95       	ret
+ 10a:	80 e0       	ldi	r24, 0x00	; 0
+		}
+		
+		if (noBeatCount>=4){
+ 10c:	08 95       	ret
+
+0000010e <_Z8led_initv>:
+ 10e:	87 b3       	in	r24, 0x17	; 23
+ 110:	83 60       	ori	r24, 0x03	; 3
+			for (uint8_t i=0; i<indexBeat;i++){ //check lower filters! more important to get bass than wait for low
+ 112:	87 bb       	out	0x17, r24	; 23
+ 114:	c1 98       	cbi	0x18, 1	; 24
+ 116:	08 95       	ret
+
+00000118 <_Z9led_blinkhh>:
+ 118:	62 30       	cpi	r22, 0x02	; 2
+ 11a:	28 f0       	brcs	.+10     	; 0x126 <_Z9led_blinkhh+0xe>
+ 11c:	70 e0       	ldi	r23, 0x00	; 0
+ 11e:	16 16       	cp	r1, r22
+				if(values[i]>beatVal){
+ 120:	17 06       	cpc	r1, r23
+ 122:	14 f1       	brlt	.+68     	; 0x168 <_Z9led_blinkhh+0x50>
+ 124:	08 95       	ret
+ 126:	48 b3       	in	r20, 0x18	; 24
+ 128:	21 e0       	ldi	r18, 0x01	; 1
+ 12a:	30 e0       	ldi	r19, 0x00	; 0
+ 12c:	b9 01       	movw	r22, r18
+ 12e:	02 c0       	rjmp	.+4      	; 0x134 <_Z9led_blinkhh+0x1c>
+ 130:	66 0f       	add	r22, r22
+ 132:	77 1f       	adc	r23, r23
+ 134:	8a 95       	dec	r24
+ 136:	e2 f7       	brpl	.-8      	; 0x130 <_Z9led_blinkhh+0x18>
+ 138:	cb 01       	movw	r24, r22
+ 13a:	94 2f       	mov	r25, r20
+ 13c:	98 2b       	or	r25, r24
+ 13e:	98 bb       	out	0x18, r25	; 24
+ 140:	7f ef       	ldi	r23, 0xFF	; 255
+ 142:	e9 ef       	ldi	r30, 0xF9	; 249
+		else {
+			noBeatCount++;
+		}
+		
+		if (noBeatCount>=4){
+			for (uint8_t i=0; i<indexBeat;i++){ //check lower filters! more important to get bass than wait for low
+ 144:	20 e0       	ldi	r18, 0x00	; 0
+ 146:	71 50       	subi	r23, 0x01	; 1
+				if(values[i]>beatVal){
+ 148:	e0 40       	sbci	r30, 0x00	; 0
+					beatVal=values[i];
+ 14a:	20 40       	sbci	r18, 0x00	; 0
+ 14c:	e1 f7       	brne	.-8      	; 0x146 <_Z9led_blinkhh+0x2e>
+ 14e:	00 c0       	rjmp	.+0      	; 0x150 <_Z9led_blinkhh+0x38>
+ 150:	00 00       	nop
+					noBeatCount=0;
+ 152:	98 b3       	in	r25, 0x18	; 24
+ 154:	80 95       	com	r24
+ 156:	89 23       	and	r24, r25
+ 158:	88 bb       	out	0x18, r24	; 24
+					beat=1;
+ 15a:	8f e1       	ldi	r24, 0x1F	; 31
+ 15c:	9e e4       	ldi	r25, 0x4E	; 78
+ 15e:	01 97       	sbiw	r24, 0x01	; 1
+					index=i;
+ 160:	f1 f7       	brne	.-4      	; 0x15e <_Z9led_blinkhh+0x46>
+ 162:	00 c0       	rjmp	.+0      	; 0x164 <_Z9led_blinkhh+0x4c>
+					indexBeat=i;
+ 164:	00 00       	nop
+ 166:	08 95       	ret
+ 168:	21 e0       	ldi	r18, 0x01	; 1
+ 16a:	30 e0       	ldi	r19, 0x00	; 0
+					return 1;
+ 16c:	a9 01       	movw	r20, r18
+			noBeatCount++;
+		}
+		
+		if (noBeatCount>=4){
+			for (uint8_t i=0; i<indexBeat;i++){ //check lower filters! more important to get bass than wait for low
+				if(values[i]>beatVal){
+ 16e:	02 c0       	rjmp	.+4      	; 0x174 <_Z9led_blinkhh+0x5c>
+		else {
+			noBeatCount++;
+		}
+		
+		if (noBeatCount>=4){
+			for (uint8_t i=0; i<indexBeat;i++){ //check lower filters! more important to get bass than wait for low
+ 170:	44 0f       	add	r20, r20
+ 172:	55 1f       	adc	r21, r21
+ 174:	8a 95       	dec	r24
+ 176:	e2 f7       	brpl	.-8      	; 0x170 <_Z9led_blinkhh+0x58>
+ 178:	ca 01       	movw	r24, r20
+ 17a:	80 95       	com	r24
+					indexBeat=i;
+					return 1;
+				}
+			}
+		}
+		if (noBeatCount>256){
+ 17c:	20 e0       	ldi	r18, 0x00	; 0
+ 17e:	30 e0       	ldi	r19, 0x00	; 0
+ 180:	98 b3       	in	r25, 0x18	; 24
+ 182:	94 2b       	or	r25, r20
+			if (indexBeat<=1){ 
+ 184:	98 bb       	out	0x18, r25	; 24
+ 186:	5f ef       	ldi	r21, 0xFF	; 255
+ 188:	99 ef       	ldi	r25, 0xF9	; 249
+ 18a:	e0 e0       	ldi	r30, 0x00	; 0
+ 18c:	51 50       	subi	r21, 0x01	; 1
+ 18e:	90 40       	sbci	r25, 0x00	; 0
+				indexBeat=2;
+ 190:	e0 40       	sbci	r30, 0x00	; 0
+ 192:	e1 f7       	brne	.-8      	; 0x18c <_Z9led_blinkhh+0x74>
+ 194:	00 c0       	rjmp	.+0      	; 0x196 <_Z9led_blinkhh+0x7e>
+ 196:	00 00       	nop
+ 198:	98 b3       	in	r25, 0x18	; 24
+ 19a:	98 23       	and	r25, r24
+					indexBeat=N_FILTER;
+				}
+			}
+		}
+	}
+	return 0;
+ 19c:	98 bb       	out	0x18, r25	; 24
+ 19e:	5f e7       	ldi	r21, 0x7F	; 127
+		}
+		if (noBeatCount>256){
+			if (indexBeat<=1){ 
+				indexBeat=2;
+			}
+			else if (noBeatCount>512){
+ 1a0:	9a e1       	ldi	r25, 0x1A	; 26
+ 1a2:	e6 e0       	ldi	r30, 0x06	; 6
+ 1a4:	51 50       	subi	r21, 0x01	; 1
+ 1a6:	90 40       	sbci	r25, 0x00	; 0
+				if (beatVal>180){
+ 1a8:	e0 40       	sbci	r30, 0x00	; 0
+ 1aa:	e1 f7       	brne	.-8      	; 0x1a4 <_Z9led_blinkhh+0x8c>
+ 1ac:	00 c0       	rjmp	.+0      	; 0x1ae <_Z9led_blinkhh+0x96>
+					beatVal--;
+ 1ae:	00 00       	nop
+ 1b0:	2f 5f       	subi	r18, 0xFF	; 255
+ 1b2:	3f 4f       	sbci	r19, 0xFF	; 255
+ 1b4:	26 17       	cp	r18, r22
+ 1b6:	37 07       	cpc	r19, r23
+ 1b8:	1c f3       	brlt	.-58     	; 0x180 <_Z9led_blinkhh+0x68>
+				}
+				if (noBeatCount>1024){
+ 1ba:	08 95       	ret
+
+000001bc <_Z11msgeq7_initv>:
+ 1bc:	8a b3       	in	r24, 0x1a	; 26
+ 1be:	86 60       	ori	r24, 0x06	; 6
+					indexBeat=N_FILTER;
+ 1c0:	8a bb       	out	0x1a, r24	; 26
+ 1c2:	d9 9a       	sbi	0x1b, 1	; 27
+ 1c4:	d9 98       	cbi	0x1b, 1	; 27
+ 1c6:	08 95       	ret
+
+000001c8 <_exit>:
+ 1c8:	f8 94       	cli
+
+000001ca <__stop_program>:
+ 1ca:	ff cf       	rjmp	.-2      	; 0x1ca <__stop_program>

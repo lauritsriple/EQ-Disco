@@ -25,26 +25,16 @@ uint8_t colors[4][3]= {
 };
  
 #define numColors 4
- 
-void strip_setR(uint8_t val){
-	pwm_setR(val);
-	rgb[0]=val;
+
+void strip_setChannel(Color col,uint8_t val){
+	pwm_set(col,val);
+	rgb[col]=val;
 }
 
-void strip_setG(uint8_t val){
-	pwm_setG(val);
-	rgb[1]=val;
-}
-
-void strip_setB(uint8_t val){
-	pwm_setB(val); 
-	rgb[2]=val;
-}
-
-void strip_setRGB(uint8_t r, uint8_t g, uint8_t b){
-	strip_setR(r);
-	strip_setG(g);
-	strip_setB(b);
+void strip_setRGB(uint8_t red, uint8_t green, uint8_t blue){
+	strip_setChannel(r,red);
+	strip_setChannel(g,green);
+	strip_setChannel(b,blue);
 }
 
 void strip_setHSV(int hVal,int sVal, int vVal){
