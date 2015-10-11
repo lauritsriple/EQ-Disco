@@ -25,25 +25,25 @@ int main() {
 	led_init();
 	button_init();
 	sw_init();
-	
 	static uint8_t repeat=0;
 	static uint8_t count=0;
 	static uint16_t noBeatCount=0;
+	uint8_t val=0;
+	strip_setRGB(0,0,0);
+	adc_setChannel(5);
 	
 	while(1){
 		//led_blink(LED1,1);
 		//led_blink(LED2,1);
-		_delay_ms(100);
 		
-		
-		
-		if (!(sw_status)){
-			led_blink(LED1,1);
-		}
+		strip_setRGB(0,0,adc_read()>>2);
+		/*if (isBeat()){
+			strip_setRGB(250,250,250);
+			_delay_ms(100);
+			strip_setRGB(0,0,0);
+		}*/
+		led_blink(LED2,1);
 		/*
-		
-		if (button_pressed()){
-			led_blink(LED1,1);
 			if (mode>=3){
 				mode=1;
 			}
@@ -51,6 +51,7 @@ int main() {
 				mode++;
 			}
 		}
+		
 		switch (mode){
 			case 1: //const
 				uint8_t hsv[3];

@@ -15,8 +15,8 @@ enum Color {r,g,b};
 
 //PORT A
 #define MSGEQ7	0	//PA0
-#define RESET	1	//PA1
-#define STROBE	2	//PA2
+#define STROBE	1	//PA1
+#define RESET	2	//PA2
 #define BUTTON	3	//PA3
 #define SW		4	//PA4
 #define POT		5	//PA5

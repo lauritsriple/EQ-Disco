@@ -11,6 +11,7 @@
 #include "beat.h"
 #include <util/delay.h>
 #include "io.h"
+#include "strip.h"
 
 
 //int eqFilters=3;
@@ -36,8 +37,11 @@ uint8_t isBeat(void){
 	//READ FROM CHIP UP TO "FILTERS"
 	for (int i = 0 ; i<N_FILTER;i++){
 		values[i]=msgeq7_getVal();
+		if (values[i]>=200){
+			led_blink(LED1,1);
+		}
 		msgeq7_strobe();
-	}	
+	}
 	
 	//find beat, iterate through output list
 	if (beat==0){

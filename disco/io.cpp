@@ -22,6 +22,7 @@ void pwm_init(void){
 	//****** COUNTER0 8-bit	
 	// Counter 0B clear OC0B at bottom (counting up)
 	TCCR0A |= ( 1 << COM0B1);
+	TCCR0A |= ( 1 << COM0A1);
 	// Set 0xFF as top, update OCRx at bottom, TOV flag on max
 	TCCR0A |= ( 1 << WGM01) | ( 1 << WGM00);
 	// No prescaling
@@ -30,13 +31,13 @@ void pwm_init(void){
 	//Both output compare already initialized as zero.
 	//****** COUNTER1 16-bit
 	//Counter 1A and 1B clear at bottom
-	TCCR1A |= ( 1 << COM1A1) | ( 1 << COM1B1);
-	TCCR1A &= ~(1 << COM1A0) | (1 << COM1B0);
+	TCCR1A |= ( 1 << COM1A1); //| ( 1 << COM1B1);
+	TCCR1A &= ~(1 << COM1A0); //| (1 << COM1B0);
 	// Fast PWM 8-bit
 	TCCR1A |= ( 1 << WGM10);
 	TCCR1B |= ( 1 << WGM12);
 	// No prescaling
-	TCCR1B |= ( 1 << CS10 );
+	TCCR1B |= ( 1 << CS10);
 }
 
 void pwm_set(Color col,uint8_t val){
@@ -75,13 +76,19 @@ void adc_setChannel(uint8_t channel){
 			ADMUX &= ~((1<<MUX2)|(1<<MUX3)|(1<<MUX4)|(1<<MUX5));
 			ADMUX |= (1<<MUX0)|(1<<MUX1);
 			break;
+		case 4:
+			ADMUX &=~((1 << MUX0)|(1<<MUX1)|(1<<MUX3)|(1<<MUX4)|(1<<MUX5));
+			ADMUX |= (1<<MUX2);
+		case 5:
+			ADMUX &=~((1<<MUX1)|(1<<MUX3)|(1<<MUX4)|(1<<MUX5));
+			ADMUX |= (1 << MUX0) | (1<<MUX2);
 	}
 }
 
 uint16_t adc_read(){
 	//Start conversion
 	ADCSRA |= ( 1 << ADSC );
-	while(ADCSRA & ( 1 << ADSC ));
+	while(ADCSRA & ( 1 << ADSC )); //wait for full buffer
 	uint16_t adc_value = 0;
 	adc_value = ADCL; // reads 8 bit value
 	adc_value |= (ADCH << 8); // reads 8 bit and combines to 16bit
@@ -90,12 +97,12 @@ uint16_t adc_read(){
 }
 
 void button_init(void){
-	DDRA&=~(1 << BUTTON);
-	//PORTA|=(1 << BUTTON);
+	DDRA &= ~(1 << BUTTON);
+	PORTA|=(1 << BUTTON);
 }
 
 void sw_init(void){
-	DDRA&=~(1 << SW);
+	DDRA &= ~(1 << SW);
 	PORTA |= (1<<SW);
 }
 
@@ -106,16 +113,13 @@ uint8_t sw_status(void){
 
 uint8_t button_pressed(void){
 	static uint8_t pushed=0;
-	
-	if (!(PINB & (1 << BUTTON)) & (!pushed)) { //PIN is low and not already pushed
+	if (!(PINA & (1 << BUTTON)) & (!pushed)) { //PIN is low and not already pushed
 		pushed =1;
 		return 1;
 	}
-	
-	if ((PINB & ( 1 << BUTTON)) & pushed){ //is pushed and goes high
+	if ((PINA & ( 1 << BUTTON)) && (pushed)){ //is pushed and goes high
 		pushed=0;
 	}
-	
 	return 0;
 }
 
@@ -153,6 +157,7 @@ void led_blink(uint8_t led,uint8_t num){
 void msgeq7_init(void){
 		//Strobe and reset as outputs
 		DDRA |= (1 << RESET) | (1 << STROBE);
+		DDRA &=~(1<<MSGEQ7);
 		//Reset chip
 		PORTA |= (1 << RESET);
 		PORTA &= ~(1 << RESET);
@@ -168,7 +173,7 @@ void msgeq7_reset(void){
 
 void msgeq7_strobe(void){
 	PORTA |= (1 << STROBE); //high
-	_delay_us(2);
+	_delay_us(20);
 	PORTA &= ~(1 << STROBE); //low
 	_delay_us(40); //specs say 36 microseconds
 }
