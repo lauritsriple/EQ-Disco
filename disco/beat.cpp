@@ -37,9 +37,6 @@ uint8_t isBeat(void){
 	//READ FROM CHIP UP TO "FILTERS"
 	for (int i = 0 ; i<N_FILTER;i++){
 		values[i]=msgeq7_getVal();
-		if (values[i]>=200){
-			led_blink(LED1,1);
-		}
 		msgeq7_strobe();
 	}
 	

@@ -49,6 +49,8 @@ void pwm_set(Color col,uint8_t val){
 }
 
 void adc_init(void){
+	DDRA&=~(1 << POT);
+	DDRA&=~(1 << MSGEQ7);
 	//Set ADC reference to VCC (00)
 	ADMUX &= ~( 1 << REFS0 );
 	ADMUX &= ~( 1 << REFS1 );
@@ -60,6 +62,8 @@ void adc_init(void){
 }
 
 void adc_setChannel(uint8_t channel){
+	while(ADCSRA & (1 << ADSC)){}; //Wait for conversion too finish
+
 	switch (channel){
 		case 0:
 			ADMUX &= ~((1 << MUX0)|(1<<MUX1)|(1<<MUX2)|(1<<MUX3)|(1<<MUX4)|(1<<MUX5));
@@ -78,14 +82,20 @@ void adc_setChannel(uint8_t channel){
 			break;
 		case 4:
 			ADMUX &=~((1 << MUX0)|(1<<MUX1)|(1<<MUX3)|(1<<MUX4)|(1<<MUX5));
-			ADMUX |= (1<<MUX2);
+			ADMUX |= ((1<<MUX2));
+			break;
 		case 5:
 			ADMUX &=~((1<<MUX1)|(1<<MUX3)|(1<<MUX4)|(1<<MUX5));
-			ADMUX |= (1 << MUX0) | (1<<MUX2);
+			ADMUX |= ((1 << MUX0) | (1<<MUX2));
+			break;
 	}
 }
 
-uint16_t adc_read(){
+uint8_t adc_getChannel(void){
+	return ((ADMUX) & (0b00111111));
+}
+
+uint16_t adc_read(void){
 	//Start conversion
 	ADCSRA |= ( 1 << ADSC );
 	while(ADCSRA & ( 1 << ADSC )); //wait for full buffer
@@ -154,10 +164,38 @@ void led_blink(uint8_t led,uint8_t num){
 	}
 }
 
+void led_setMode(uint8_t mode){
+	switch (mode){
+		case 0:
+			led_set(LED1,0);
+			led_set(LED2,0);
+			break;
+		case 1:
+			led_set(LED1,0);
+			led_set(LED2,1);
+			break;
+		case 2:
+			led_set(LED1,1);
+			led_set(LED2,0);
+			break;
+		case 3:
+			led_set(LED1,1);
+			led_set(LED2,1);
+			break;
+	}
+}
+
+uint8_t led_getMode(void){
+	uint8_t retH = (PORTB & (1<<LED1));
+	uint8_t retL= (PORTB & (1<<LED2));
+	uint8_t ret = retH | retL;
+	return ret;
+}
+
 void msgeq7_init(void){
 		//Strobe and reset as outputs
 		DDRA |= (1 << RESET) | (1 << STROBE);
-		DDRA &=~(1<<MSGEQ7);
+		//DDRA &=~(1<<MSGEQ7);
 		//Reset chip
 		PORTA |= (1 << RESET);
 		PORTA &= ~(1 << RESET);

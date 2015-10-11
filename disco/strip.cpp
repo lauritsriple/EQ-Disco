@@ -13,9 +13,9 @@
 
 
 //Private variables
-uint8_t rgb[3]={0,0,0};
-uint8_t hsv[3]={0,0,0};
-uint8_t fade[3]={0,0,0};
+uint16_t rgb[3]={0,0,0};
+uint16_t hsv[3]={0,0,0};
+uint16_t fade[3]={0,0,0};
 	
 uint8_t colors[4][3]= {
  	{250,255,255},
@@ -37,39 +37,33 @@ void strip_setRGB(uint8_t red, uint8_t green, uint8_t blue){
 	strip_setChannel(b,blue);
 }
 
-void strip_setHSV(int hVal,int sVal, int vVal){
+void strip_setHSV(uint16_t hVal,uint16_t sVal, uint16_t vVal){
 	uint16_t h;
 	uint16_t s;
 	uint16_t v;
 	
-	if (hVal==-1){
+	if (hVal==65535){
 		h=hsv[0];	
 	}
 	else{
 		h=hVal;
 	}
 	
-	if (sVal==-1){
+	if (sVal==65535){
 		s=hsv[1];
 	}
 	else {
 		s=sVal;
 	}
 	
-	if (vVal==-1){
+	if (vVal==65535){
 		v=hsv[2];
 	}
 	else {
 		v=vVal;
 	}
-	uint16_t p,q,t,region,remainder;
 	
-	if (hVal==-1){
-		h=hsv[0];
-	}
-	if (sVal==-1){
-		s=hsv[1];
-	}
+	uint16_t p,q,t,region,remainder;
 	
 	if (s==0){
 		strip_setRGB(v,v,v);
@@ -89,49 +83,52 @@ void strip_setHSV(int hVal,int sVal, int vVal){
 	switch(region){
 		case 0:
 			strip_setRGB(v,t,p);
-			hsv[0]=v;
-			hsv[1]=t;
-			hsv[2]=p;
+			rgb[0]=v;
+			rgb[1]=t;
+			rgb[2]=p;
 			break;
 		case 1:
 			strip_setRGB(q,v,p);
-			hsv[0]=q;
-			hsv[1]=v;
-			hsv[2]=p;
+			rgb[0]=q;
+			rgb[1]=v;
+			rgb[2]=p;
 			break;
 		case 2:
 			strip_setRGB(p,v,t);
-			hsv[0]=p;
-			hsv[1]=v;
-			hsv[2]=t;
+			rgb[0]=p;
+			rgb[1]=v;
+			rgb[2]=t;
 			break;
 		case 3:
 			strip_setRGB(p,q,v);
-			hsv[0]=p;
-			hsv[1]=q;
-			hsv[2]=v;
+			rgb[0]=p;
+			rgb[1]=q;
+			rgb[2]=v;
 			break;
 		case 4:
 			strip_setRGB(t,p,v);
-			hsv[0]=t;
-			hsv[1]=p;
-			hsv[2]=v;
+			rgb[0]=t;
+			rgb[1]=p;
+			rgb[2]=v;
 			break;
 		default:
 			strip_setRGB(v,p,q);
-			hsv[0]=v;
-			hsv[1]=p;
-			hsv[2]=q;
+			rgb[0]=v;
+			rgb[1]=p;
+			rgb[2]=q;
 			break;
-	}	
+	}
+	hsv[0]=h;
+	hsv[1]=s;
+	hsv[2]=v;	
 	
 }
 
 void strip_setNewHSVColor(){
-		uint8_t index;
-		while (1){
+		uint8_t index=0;
+		while (!index){
 			uint8_t newColor= rand() % numColors;
-			for (uint8_t i=0;i<3;i++){
+			for (uint8_t i=0;i<numColors-1;i++){
 				if (colors[newColor][i]!=hsv[i]){
 					index=i;
 				}

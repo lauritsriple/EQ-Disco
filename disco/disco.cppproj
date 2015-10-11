@@ -38,10 +38,11 @@
         </dependencies>
       </framework-data>
     </AsfFrameworkConfig>
-    <avrtool>com.atmel.avrdbg.tool.atmelice</avrtool>
+    <avrtool>com.atmel.avrdbg.tool.jtagice3plus</avrtool>
     <com_atmel_avrdbg_tool_jtagice3plus>
       <ToolOptions>
         <InterfaceProperties>
+          <IspClock>125000</IspClock>
         </InterfaceProperties>
         <InterfaceName>ISP</InterfaceName>
       </ToolOptions>
@@ -53,7 +54,6 @@
     <com_atmel_avrdbg_tool_atmelice>
       <ToolOptions>
         <InterfaceProperties>
-          <IspClock>125000</IspClock>
         </InterfaceProperties>
         <InterfaceName>ISP</InterfaceName>
       </ToolOptions>
