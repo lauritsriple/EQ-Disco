@@ -49,8 +49,8 @@ void pwm_set(Color col,uint8_t val){
 }
 
 void adc_init(void){
-	DDRA&=~(1 << POT);
-	DDRA&=~(1 << MSGEQ7);
+	//DDRA&=~(1 << POT);
+	//DDRA&=~(1 << MSGEQ7);
 	//Set ADC reference to VCC (00)
 	ADMUX &= ~( 1 << REFS0 );
 	ADMUX &= ~( 1 << REFS1 );
@@ -62,37 +62,15 @@ void adc_init(void){
 }
 
 void adc_setChannel(uint8_t channel){
-	while(ADCSRA & (1 << ADSC)){}; //Wait for conversion too finish
-
-	switch (channel){
-		case 0:
-			ADMUX &= ~((1 << MUX0)|(1<<MUX1)|(1<<MUX2)|(1<<MUX3)|(1<<MUX4)|(1<<MUX5));
-			break;
-		case 1:
-			ADMUX &= ~((1<<MUX1)|(1<<MUX2)|(1<<MUX3)|(1<<MUX4)|(1<<MUX5));
-			ADMUX |= (1 << MUX0);
-			break;
-		case 2:
-			ADMUX &= ~((1<<MUX0)|(1<<MUX2)|(1<<MUX3)|(1<<MUX4)|(1<<MUX5));
-			ADMUX |= (1<<MUX1);
-			break;
-		case 3:
-			ADMUX &= ~((1<<MUX2)|(1<<MUX3)|(1<<MUX4)|(1<<MUX5));
-			ADMUX |= (1<<MUX0)|(1<<MUX1);
-			break;
-		case 4:
-			ADMUX &=~((1 << MUX0)|(1<<MUX1)|(1<<MUX3)|(1<<MUX4)|(1<<MUX5));
-			ADMUX |= ((1<<MUX2));
-			break;
-		case 5:
-			ADMUX &=~((1<<MUX1)|(1<<MUX3)|(1<<MUX4)|(1<<MUX5));
-			ADMUX |= ((1 << MUX0) | (1<<MUX2));
-			break;
-	}
+	//Wait for conversion too finish
+	while(ADCSRA & ( 1 << ADSC ));
+	//ADCSRA &=~(1<<ADEN);
+	ADMUX = (ADMUX & 0b00000111) | channel;
+	//ADCSRA |= (1<<ADEN);
 }
 
 uint8_t adc_getChannel(void){
-	return ((ADMUX) & (0b00111111));
+	return (ADMUX & 0b00000111);
 }
 
 uint16_t adc_read(void){
@@ -195,7 +173,7 @@ uint8_t led_getMode(void){
 void msgeq7_init(void){
 		//Strobe and reset as outputs
 		DDRA |= (1 << RESET) | (1 << STROBE);
-		//DDRA &=~(1<<MSGEQ7);
+		DDRA &=~(1<<MSGEQ7);
 		//Reset chip
 		PORTA |= (1 << RESET);
 		PORTA &= ~(1 << RESET);
@@ -204,19 +182,21 @@ void msgeq7_init(void){
 void msgeq7_reset(void){
 	//RESET, high -> low
 	PORTA |= (1 << RESET);
-	_delay_us(100);
+	//_delay_us(100);
 	PORTA &= ~(1 << RESET);
-	_delay_us(200);	
+	//_delay_us(200);	
 }
 
 void msgeq7_strobe(void){
 	PORTA |= (1 << STROBE); //high
-	_delay_us(20);
+	//_delay_us(20);
 	PORTA &= ~(1 << STROBE); //low
-	_delay_us(40); //specs say 36 microseconds
+	_delay_ms(100); //specs say 36 microseconds
 }
 
 uint16_t msgeq7_getVal(void){
-	adc_setChannel(MSGEQ7);
+	if (adc_getChannel()!=MSGEQ7){
+		adc_setChannel(MSGEQ7);
+	}
 	return adc_read();
 }

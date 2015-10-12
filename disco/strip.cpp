@@ -124,23 +124,40 @@ void strip_setHSV(uint16_t hVal,uint16_t sVal, uint16_t vVal){
 	
 }
 
-void strip_setNewHSVColor(){
-		uint8_t index=0;
-		while (!index){
-			uint8_t newColor= rand() % numColors;
-			for (uint8_t i=0;i<numColors-1;i++){
-				if (colors[newColor][i]!=hsv[i]){
-					index=i;
-				}
-			}
-		}
-		strip_setHSV(colors[index][0],colors[index][1],colors[index][2]);
-}
-
 void strip_setFadeColor(uint8_t h, uint8_t s, uint8_t v){
 	fade[0]=h;
 	fade[1]=s;
 	fade[2]=v;
+}
+
+void strip_setNewHSVColor(){
+		uint8_t found=0;
+		uint8_t newColor=0;
+		while (found<3){
+			found=0;
+			uint8_t newColor= rand() % numColors;
+			for (uint8_t i=0;i<numColors-1;i++){
+				if (colors[newColor][i]==hsv[i]){
+					found++;
+				}
+			}
+		}
+		strip_setHSV(colors[newColor][0],colors[newColor][1],colors[newColor][2]);
+}
+
+void strip_setNewFadeColor(){
+		uint8_t found=0;
+		uint8_t newColor=0;
+		while (found<3){
+			found=0;
+			uint8_t newColor= rand() % numColors;
+			for (uint8_t i=0;i<numColors-1;i++){
+				if (colors[newColor][i]==hsv[i]){
+					found++;
+				}
+			}
+		}
+		strip_setFadeColor(colors[newColor][0],colors[newColor][1],colors[newColor][2]);
 }
 
 uint8_t strip_fade(uint8_t stepsize){
@@ -155,11 +172,9 @@ uint8_t strip_fade(uint8_t stepsize){
 	int numSteps = arrDiff[0]/stepsize;
 	if (numSteps<=1 && numSteps>=-1){
 		strip_setHSV(fade[0],fade[1],fade[2]);
-		uint8_t arr[3] = {0,0,0};
-		strip_setFadeColor(arr[0],arr[1],arr[2]);
 		return 1;
 	}
-	else if (numSteps>0){
+	else if (numSteps>2){
 		strip_setHSV(hsv[0]-stepsize,hsv[1]-arrDiff[1]/numSteps,hsv[2]-arrDiff[2]/numSteps);
 		return 0;
 	}
@@ -170,17 +185,6 @@ uint8_t strip_fade(uint8_t stepsize){
 	return 0;	
 }
 
-void strip_setNewFadeColor(){
-	uint8_t index;
-	while (1){
-		uint8_t newColor= rand() % numColors;
-		for (uint8_t i=0;i<3;i++){
-			if (colors[newColor][i]!=hsv[i]){
-				index=i;
-			}
-		}
-	}
-	strip_setFadeColor(colors[index][0],colors[index][1],colors[index][2]);
-}
+
 
 

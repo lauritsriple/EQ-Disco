@@ -28,13 +28,11 @@ int main() {
 	button_init();
 	sw_init();
 	led_setMode(0);
+	//adc_setChannel(5);
 	static uint8_t repeat=0;
 	static uint8_t count=0;
 	static uint16_t noBeatCount=0;
 	uint8_t val=0;
-	strip_setRGB(0,0,0);
-	adc_setChannel(5);
-	strip_setHSV(150,250,120);
 	while(1){
 		if (sw_status()){
 			mode=2;
@@ -42,7 +40,7 @@ int main() {
 		}
 		else{
 			mode=1;
-			led_setMode(0);
+			//led_setMode(0);
 		}
 		
 		if (button_pressed()){
@@ -56,11 +54,10 @@ int main() {
 		
 		switch (mode){
 			case 1: //const
+				if (adc_getChannel()!=5){
+					adc_setChannel(5);
+				}
 				switch (controlMode){
-					if (adc_getChannel()!=5){
-						adc_setChannel(5);
-					}
-					_delay_ms(100);
 					case 1: //Control hue
 						led_setMode(1);
 						strip_setHSV((adc_read()>>2),65535,65535);
@@ -76,21 +73,24 @@ int main() {
 				}
 				break;
 			case 2: //music
-				led_blink(LED1,1);
-				if (count==repeat){
+				/*if (count==repeat){
 					repeat=(rand()%5)*4;
 					count=0;
 					musicMode=(rand()%2)+1;
-				}
+				}*/
+				
+				musicMode=1;
 			
 				switch (musicMode){
 					case 1: //blink
-						/*if (isBeat()){
+						if (isBeat()){
 							//strip_setNewHSVColor();
-							_delay_ms(200);
+							//strip_setHSV(250,250,250);
+							//_delay_ms(200);
+							//strip_setHSV(250,250,80);
 							//strip_setHSV(0,0,0);
 						}
-						else{
+						/*else{
 							noBeatCount++;
 						}*/
 						break;
@@ -104,14 +104,15 @@ int main() {
 						break;
 				}
 				
-				if (noBeatCount>10){
-					/*if (strip_fade(1)){
-						//strip_setNewFadeColor();
+				/*if (noBeatCount>10){
+					_delay_ms(10);
+					if (strip_fade(1)){
 						led_blink(LED2,1);
-					}*/
-					led_blink(LED2,1);
-				}
-				count++;
+						strip_setNewFadeColor();
+						
+					}
+				}*/
+				//count++;
 				break;
 		}
 	}

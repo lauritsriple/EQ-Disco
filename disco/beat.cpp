@@ -40,6 +40,8 @@ uint8_t isBeat(void){
 		msgeq7_strobe();
 	}
 	
+	strip_setRGB(values[0]>>2,values[1]>>2,values[2]>>2);
+	
 	//find beat, iterate through output list
 	if (beat==0){
 		for (uint8_t i=0; i<N_FILTER;i++){
