@@ -45,18 +45,21 @@ void pwm_set(Color col,uint8_t val){
 		case r: OCR0A=val;
 		case g: OCR0B=val;
 		case b: OCR1AL=val;
+		break;
 	}
-}
+} 
 
 void adc_init(void){
-	//DDRA&=~(1 << POT);
-	//DDRA&=~(1 << MSGEQ7);
+	DDRA&=~(1 << POT);
+	DDRA&=~(1 << MSGEQ7);
+
 	//Set ADC reference to VCC (00)
 	ADMUX &= ~( 1 << REFS0 );
 	ADMUX &= ~( 1 << REFS1 );
 	//Prescaler 64 -> 125kHz
 	//Recommended for 10bit -> 50-200kHz
 	ADCSRA |= (1 << ADPS1) | ( 1 << ADPS2);
+	ADCSRA &=~(1<<ADPS0);
 	//Enable ADC
 	ADCSRA |= ( 1 << ADEN);
 }
@@ -65,7 +68,8 @@ void adc_setChannel(uint8_t channel){
 	//Wait for conversion too finish
 	while(ADCSRA & ( 1 << ADSC ));
 	//ADCSRA &=~(1<<ADEN);
-	ADMUX = (ADMUX & 0b00000111) | channel;
+	//ADMUX = ((ADMUX) & 0b00000111) | channel;
+	ADMUX = (channel & 0b00000111);
 	//ADCSRA |= (1<<ADEN);
 }
 
@@ -173,7 +177,7 @@ uint8_t led_getMode(void){
 void msgeq7_init(void){
 		//Strobe and reset as outputs
 		DDRA |= (1 << RESET) | (1 << STROBE);
-		DDRA &=~(1<<MSGEQ7);
+		//DDRA &=~(1<<MSGEQ7); in adcread
 		//Reset chip
 		PORTA |= (1 << RESET);
 		PORTA &= ~(1 << RESET);
@@ -182,16 +186,16 @@ void msgeq7_init(void){
 void msgeq7_reset(void){
 	//RESET, high -> low
 	PORTA |= (1 << RESET);
-	//_delay_us(100);
+	_delay_us(100);
 	PORTA &= ~(1 << RESET);
 	//_delay_us(200);	
 }
 
 void msgeq7_strobe(void){
 	PORTA |= (1 << STROBE); //high
-	//_delay_us(20);
+	_delay_us(20);
 	PORTA &= ~(1 << STROBE); //low
-	_delay_ms(100); //specs say 36 microseconds
+	_delay_ms(1); //specs say 36 microseconds
 }
 
 uint16_t msgeq7_getVal(void){

@@ -14,7 +14,7 @@
 
 //Private variables
 uint16_t rgb[3]={0,0,0};
-uint16_t hsv[3]={0,0,0};
+uint16_t hsv[3]={0,150,150};
 uint16_t fade[3]={0,0,0};
 	
 uint8_t colors[4][3]= {

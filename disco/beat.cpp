@@ -35,15 +35,17 @@ uint8_t isBeat(void){
 	msgeq7_reset();
 	_delay_ms(10);
 	//READ FROM CHIP UP TO "FILTERS"
-	for (int i = 0 ; i<N_FILTER;i++){
-		values[i]=msgeq7_getVal();
+	for (int i = 0 ; i< N_FILTER;i++){
 		msgeq7_strobe();
+		values[i]=msgeq7_getVal();
+		
 	}
 	
-	strip_setRGB(values[0]>>2,values[1]>>2,values[2]>>2);
+	strip_setRGB(values[2]>>2,50,20);
+	led_blink(LED1,1);
 	
 	//find beat, iterate through output list
-	if (beat==0){
+	/*if (beat==0){
 		for (uint8_t i=0; i<N_FILTER;i++){
 			if (values[i]>beatVal-offset){ // high value and not already beat
 				beatVal=values[i];
@@ -92,7 +94,7 @@ uint8_t isBeat(void){
 				}
 			}
 		}
-	}
+	}*/
 	return 0;
 	
 }
