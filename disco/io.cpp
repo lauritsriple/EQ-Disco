@@ -10,6 +10,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include "io.h"
+#include <stdlib.h>
 
 void pwm_init(void){
 	//OC0A -> PB2 -> RED
@@ -32,7 +33,7 @@ void pwm_init(void){
 	//****** COUNTER1 16-bit
 	//Counter 1A and 1B clear at bottom
 	TCCR1A |= ( 1 << COM1A1); //| ( 1 << COM1B1);
-	TCCR1A &= ~(1 << COM1A0); //| (1 << COM1B0);
+	//TCCR1A &= ~(1 << COM1A0); //| (1 << COM1B0);
 	// Fast PWM 8-bit
 	TCCR1A |= ( 1 << WGM10);
 	TCCR1B |= ( 1 << WGM12);
@@ -42,10 +43,36 @@ void pwm_init(void){
 
 void pwm_set(Color col,uint8_t val){
 	switch(col){
-		case r: OCR0A=val;
-		case g: OCR0B=val;
-		case b: OCR1AL=val;
-		break;
+		case r:
+			if (val>3){
+				TCCR0A |= ( 1 << COM0A1);
+				OCR0A=val;
+			}
+			else{
+				TCCR0A &= ~( 1 << COM0A1);
+				OCR0A=0;
+			}
+			break;
+		case g:
+			if (val>3){
+				TCCR0A |= ( 1 << COM0B1);
+				OCR0B=val;
+			}
+			else{
+				TCCR0A &= ~( 1 << COM0B1);
+				OCR0B=0;
+			}
+			break;
+		case b:
+			if (val>3){
+				TCCR1A |= ( 1 << COM1A1);
+				OCR1AL=val;
+			}
+			else{
+				TCCR1A &= ~( 1 << COM1A1);
+				OCRA1L=0;
+			}
+			break;
 	}
 } 
 
@@ -175,30 +202,17 @@ uint8_t led_getMode(void){
 }
 
 void msgeq7_init(void){
-		//Strobe and reset as outputs
-		DDRA |= (1 << RESET) | (1 << STROBE);
-		//DDRA &=~(1<<MSGEQ7); in adcread
-		//Reset chip
-		PORTA |= (1 << RESET);
-		PORTA &= ~(1 << RESET);
-}
-
-void msgeq7_reset(void){
-	//RESET, high -> low
+	//Strobe and reset as outputs
+	DDRA |= (1 << RESET) | (1 << STROBE);
+	//DDRA &=~(1<<MSGEQ7); in adcread
+	//Reset chip
 	PORTA |= (1 << RESET);
-	_delay_us(100);
+	//_delay_us(100);
 	PORTA &= ~(1 << RESET);
-	//_delay_us(200);	
+	PORTA &= ~(1 << STROBE);
 }
 
-void msgeq7_strobe(void){
-	PORTA |= (1 << STROBE); //high
-	_delay_us(20);
-	PORTA &= ~(1 << STROBE); //low
-	_delay_ms(1); //specs say 36 microseconds
-}
-
-uint16_t msgeq7_getVal(void){
+uint16_t msgeq7_read(void){
 	if (adc_getChannel()!=MSGEQ7){
 		adc_setChannel(MSGEQ7);
 	}

@@ -9,7 +9,9 @@
 #ifndef BEAT_H_
 #define BEAT_H_
 
-#define N_FILTER 3
+#define N_ITER 3
+#define N_FILTER 2
+
 
 //uses the lowest bandpass-filters on MSGEQ7 up to "filter" and analyses them for beat.
 //this function should be run very often (whith timer maybe?)

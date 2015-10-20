@@ -49,8 +49,6 @@ void led_setMode(uint8_t mode);
 uint8_t led_getMode(void);
 
 void msgeq7_init(void);
-void msgeq7_reset(void);
-void msgeq7_strobe(void);
-uint16_t msgeq7_getVal(void);
+uint16_t msgeq7_read(void);
 
 #endif /* IO_H_ */

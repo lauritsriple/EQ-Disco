@@ -11,20 +11,21 @@
 #include "strip.h"
 #include <stdio.h>
 
-
+ 
 //Private variables
 uint16_t rgb[3]={0,0,0};
-uint16_t hsv[3]={0,150,150};
-uint16_t fade[3]={0,0,0};
+uint16_t hsv[3]={0,250,250};
+int16_t fade[3]={0,0,0};
 	
-uint8_t colors[4][3]= {
+uint8_t colors[5][3]= {
  	{250,255,255},
  	{100,255,255},
- 	{230,255,255},
- 	{45,255,255}
+ 	{200,255,255},
+ 	{40,255,255},
+	{80,255,255}
 };
  
-#define numColors 4
+#define numColors 5
 
 void strip_setChannel(Color col,uint8_t val){
 	pwm_set(col,val);
@@ -42,21 +43,21 @@ void strip_setHSV(uint16_t hVal,uint16_t sVal, uint16_t vVal){
 	uint16_t s;
 	uint16_t v;
 	
-	if (hVal==65535){
-		h=hsv[0];	
+	if (hVal==55555){
+		h=hsv[0];
 	}
 	else{
 		h=hVal;
 	}
 	
-	if (sVal==65535){
+	if (sVal==55555){
 		s=hsv[1];
 	}
 	else {
 		s=sVal;
 	}
 	
-	if (vVal==65535){
+	if (vVal==55555){
 		v=hsv[2];
 	}
 	else {
@@ -120,71 +121,86 @@ void strip_setHSV(uint16_t hVal,uint16_t sVal, uint16_t vVal){
 	}
 	hsv[0]=h;
 	hsv[1]=s;
-	hsv[2]=v;	
-	
+	hsv[2]=v;
 }
 
-void strip_setFadeColor(uint8_t h, uint8_t s, uint8_t v){
+void strip_setFadeColor(uint16_t h, uint16_t s, uint16_t v){
 	fade[0]=h;
 	fade[1]=s;
 	fade[2]=v;
 }
 
 void strip_setNewHSVColor(){
-		uint8_t found=0;
-		uint8_t newColor=0;
-		while (found<3){
-			found=0;
-			uint8_t newColor= rand() % numColors;
-			for (uint8_t i=0;i<numColors-1;i++){
-				if (colors[newColor][i]==hsv[i]){
-					found++;
-				}
-			}
+	uint8_t found=0;
+	int newColor=0;
+	while (!found){
+		found=0;
+		newColor=rand() % (numColors-1);
+		if (colors[newColor][0]!=hsv[0]){
+			found=1;
 		}
-		strip_setHSV(colors[newColor][0],colors[newColor][1],colors[newColor][2]);
+	}
+	strip_setHSV(colors[newColor][0],colors[newColor][1],colors[newColor][2]);
 }
 
 void strip_setNewFadeColor(){
-		uint8_t found=0;
-		uint8_t newColor=0;
-		while (found<3){
-			found=0;
-			uint8_t newColor= rand() % numColors;
-			for (uint8_t i=0;i<numColors-1;i++){
-				if (colors[newColor][i]==hsv[i]){
-					found++;
-				}
-			}
+	uint8_t found=0;
+	int newColor=0;
+	while (!found){
+		found=0;
+		newColor=rand() % (numColors-1);
+		if (colors[newColor][0]!=hsv[0]){
+			found=1;
 		}
-		strip_setFadeColor(colors[newColor][0],colors[newColor][1],colors[newColor][2]);
+	}
+	strip_setFadeColor(colors[newColor][0],colors[newColor][1],colors[newColor][2]);
 }
 
-uint8_t strip_fade(uint8_t stepsize){
-	//find out how many steps on different channels
-	//how many iterations is needed?
-	//fade a small step
-	int arrDiff[3] = {0,0,0};
-	for (uint8_t i = 0 ; i <3;i++){
-		arrDiff[i]=fade[i]-hsv[i];
+uint8_t strip_fade(uint16_t stepcount){
+	//do something every stepspeed time this function is called
+	static uint16_t count;
+	static uint16_t countBrightness;
+	
+	//check if brightness is right
+	if(hsv[2]<fade[2]){
+		if (countBrightness<4){
+			countBrightness++;
+			return 0;
+		}
+		else{
+			countBrightness=0;
+		}
+		if (hsv[2]<fade[2]){
+			strip_setHSV(fade[0],fade[1],hsv[2]+1);
+			return 0;
+		}
+		else{
+			strip_setHSV(fade[0],fade[1],fade[2]);
+			return 1;
+		}
 	}
-	//how many steps needed with current stepsize to fit hue?
-	int numSteps = arrDiff[0]/stepsize;
-	if (numSteps<=1 && numSteps>=-1){
+	
+	if (count<stepcount){
+		count++;
+		return 0;
+	}
+	else{
+		count=0;
+	}
+	
+	
+	
+	if(fade[0]>(int16_t)hsv[0]+1){
+		//not done
+		strip_setHSV(hsv[0]+1,fade[1],fade[2]);
+		return 0;
+	}
+	else if(fade[0]<(int16_t)hsv[0]-1){
+		strip_setHSV(hsv[0]-1,fade[1],fade[2]);
+		return 0;
+	}
+	else{
 		strip_setHSV(fade[0],fade[1],fade[2]);
 		return 1;
 	}
-	else if (numSteps>2){
-		strip_setHSV(hsv[0]-stepsize,hsv[1]-arrDiff[1]/numSteps,hsv[2]-arrDiff[2]/numSteps);
-		return 0;
-	}
-	else {
-		strip_setHSV(hsv[0]+stepsize,hsv[1]+arrDiff[1]/numSteps,hsv[2]+arrDiff[2]/numSteps);
-		return 0;
-	}
-	return 0;	
 }
-
-
-
-
